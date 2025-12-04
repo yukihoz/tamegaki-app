@@ -1,4 +1,4 @@
 1:"$Sreact.fragment"
-2:I[85837,["/_next/static/chunks/af10298bb0796bc8.js"],"default"]
-3:I[8805,["/_next/static/chunks/af10298bb0796bc8.js"],"default"]
-0:{"buildId":"bQSH24qaKO1dpAwEkrwcN","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}
+2:I[85837,["/tamegaki-app/_next/static/chunks/af10298bb0796bc8.js"],"default"]
+3:I[8805,["/tamegaki-app/_next/static/chunks/af10298bb0796bc8.js"],"default"]
+0:{"buildId":"AFxahzMl1zAv58BNpXnXz","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}

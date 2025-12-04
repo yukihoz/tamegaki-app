@@ -1,7 +1,12 @@
 self.__BUILD_MANIFEST = {
   "__rewrites": {
     "afterFiles": [],
-    "beforeFiles": [],
+    "beforeFiles": [
+      {
+        "source": "/tamegaki-app//_next/:path+",
+        "destination": "/tamegaki-app/_next/:path+"
+      }
+    ],
     "fallback": []
   },
   "sortedPages": [
