@@ -65,6 +65,7 @@ export default function RootLayout({
     <html lang="ja">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${shipporiMincho.variable} ${notoSansJP.variable} ${yujiSyuku.variable} ${zenAntique.variable} antialiased`}
+        suppressHydrationWarning
       >
         {children}
       </body>

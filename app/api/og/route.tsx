@@ -9,6 +9,9 @@ export async function GET(req: NextRequest) {
 
         const name = searchParams.get('name') || '候補者名';
         const sender = searchParams.get('sender') || '贈呈者名';
+        const nameTitle = searchParams.get('nameTitle');
+        const senderTitle = searchParams.get('senderTitle');
+        const senderImage = searchParams.get('senderImage');
         const message = searchParams.get('message');
         const imageParam = searchParams.get('image') || 'user-tamegaki.png';
         const fontParam = searchParams.get('font') || 'var(--font-shippori-mincho)';
@@ -41,8 +44,8 @@ export async function GET(req: NextRequest) {
         const host = req.headers.get('host');
         const baseUrl = `${protocol}://${host}`;
         // Ensure we only load allowed images to prevent arbitrary file access
-        const allowedImages = ['user-tamegaki.png', 'image2.png', 'image3.png', 'image4.png'];
-        const imageFile = allowedImages.includes(imageParam) ? imageParam : 'user-tamegaki.png';
+        const allowedImages = ['1.png', '2.png', '3.png', '4.png', '5.png'];
+        const imageFile = allowedImages.includes(imageParam) ? imageParam : '1.png';
         const imageUrl = `${baseUrl}/${imageFile}`;
 
         const imageData = await fetch(imageUrl).then((res) => res.arrayBuffer());
@@ -96,56 +99,118 @@ export async function GET(req: NextRequest) {
                     >
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%', height: '100%', maxWidth: '1000px', margin: '0 auto', paddingTop: '120px', paddingBottom: '120px', paddingRight: '120px', paddingLeft: '120px' }}>
 
+                            {/* Candidate Title - Right of Name */}
+                            {nameTitle && (
+                                <div style={{
+                                    position: 'absolute',
+                                    right: '0px', // Moved to 0px from 10px
+                                    top: '170px', // Moved 20px DOWN from 150px
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-start',
+                                    writingMode: 'vertical-rl',
+                                    whiteSpace: 'nowrap',
+                                }}>
+                                    <p style={{ fontSize: '38px', fontFamily: `"${fontName}"`, fontWeight: 'bold', margin: 0, letterSpacing: '0.1em' }}>
+                                        {nameTitle}
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Candidate Name - Right side (Absolute Position) */}
                             <div style={{
                                 position: 'absolute',
-                                right: '100px', // Anchored right
-                                top: '150px',
+                                right: '100px', // Changed from 110px to 100px
+                                top: '250px', // Moved 100px DOWN from 150px
                                 display: 'flex',
                                 flexDirection: 'row', // T-to-B in vertical-rl
                                 alignItems: 'center',
                                 justifyContent: 'flex-start',
                                 writingMode: 'vertical-rl',
                             }}>
-                                <h1 style={{ fontSize: '64px', fontFamily: `"${fontName}"`, fontWeight: fontWeight, letterSpacing: '0.1em', lineHeight: '1.1', margin: 0 }}>
+                                <h1 style={{ fontSize: '52px', fontFamily: `"${fontName}"`, fontWeight: fontWeight, letterSpacing: '0.1em', lineHeight: '1.1', margin: 0 }}>
                                     {name}
                                 </h1>
                                 <div style={{ marginTop: '32px', fontSize: '40px', fontFamily: `"${fontName}"` }}>殿</div>
                             </div>
 
-                            {/* Message - Middle (Absolute Position) */}
+                            {/* Message - Bottom Right (Absolute Position, Horizontal) */}
                             <div style={{
                                 position: 'absolute',
-                                right: '882px', // Anchored right (Moved 30px left from 852px)
-                                top: '400px',
-                                height: '900px', // Constrain height
+                                right: '0px',
+                                top: '1410px',
+                                width: '1200px', // Full width
                                 display: 'flex',
                                 flexDirection: 'column',
-                                alignItems: 'center',
+                                alignItems: 'flex-start', // Align text to the left
                                 justifyContent: 'flex-start',
                                 flexWrap: 'wrap',
-                                writingMode: 'vertical-rl',
                             }}>
                                 {message && (
-                                    <p style={{ fontSize: '29px', fontFamily: `"${fontName}"`, fontWeight: 'bold', whiteSpace: 'pre-wrap', textAlign: 'center', letterSpacing: '0.1em', lineHeight: '34px', maxHeight: '100%' }}>
+                                    <p style={{ fontSize: '18px', fontFamily: `"${fontName}"`, fontWeight: 'bold', whiteSpace: 'pre-wrap', textAlign: 'left', letterSpacing: '0.1em', lineHeight: '24px' }}>
                                         {message}
                                     </p>
                                 )}
                             </div>
 
+                            {/* Sender Title - Right of Sender Name */}
+                            {senderTitle && (
+                                <div style={{
+                                    position: 'absolute',
+                                    right: '960px', // Adjusted to 960px for ~50px gap from Sender Name (1052px)
+                                    top: '540px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start', // Align Top
+                                    justifyContent: 'flex-start',
+                                    writingMode: 'vertical-rl',
+                                    whiteSpace: 'nowrap',
+                                }}>
+                                    <p style={{ fontSize: '31px', fontFamily: `"${fontName}"`, fontWeight: 'bold', margin: 0, letterSpacing: '0.1em' }}>
+                                        {senderTitle}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Sender Image - Above Sender Name */}
+                            {senderImage && (
+                                <div style={{
+                                    position: 'absolute',
+                                    right: '952px', // Moved 100px RIGHT from 1052px
+                                    top: '230px', // Moved 50px DOWN from 180px
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                    width: '200px',
+                                    height: '200px',
+                                }}>
+                                    <img
+                                        src={senderImage}
+                                        alt="Sender"
+                                        style={{
+                                            width: '200px',
+                                            height: '200px',
+                                            objectFit: 'cover',
+                                            borderRadius: '50%', // Circle crop
+                                        }}
+                                    />
+                                </div>
+                            )}
+
                             {/* Sender Name - Left side (Absolute Position) */}
                             <div style={{
                                 position: 'absolute',
-                                right: '1032px', // Anchored right
-                                top: '700px',
+                                right: '1052px',
+                                top: '630px', // Moved 100px UP from 730px
                                 display: 'flex',
                                 flexDirection: 'column', // R-to-L in vertical-rl
-                                alignItems: 'flex-end',
+                                alignItems: 'flex-start', // Align Top
                                 justifyContent: 'flex-start',
                                 writingMode: 'vertical-rl',
                             }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <p style={{ fontSize: '48px', fontFamily: `"${fontName}"`, fontWeight: 'bold', letterSpacing: '0.05em' }}>
+                                    <p style={{ fontSize: '40px', fontFamily: `"${fontName}"`, fontWeight: 'bold', letterSpacing: '0.05em' }}>
                                         {sender}
                                     </p>
                                 </div>

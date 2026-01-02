@@ -3,332 +3,458 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { clsx } from "clsx";
-import { Download, Share2, Facebook, Twitter } from "lucide-react"; // Assuming lucide-react is installed for the icon
+import { Download, Share2, Facebook, Twitter } from "lucide-react";
 
 import { toPng } from 'html-to-image';
 import { useRef } from 'react';
 
 type Props = {
-  initialParams?: { [key: string]: string | string[] | undefined };
+    initialParams?: { [key: string]: string | string[] | undefined };
 };
 
 export function TamegakiPreview({ initialParams }: Props) {
-  const [name, setName] = useState((initialParams?.name as string) || "");
-  const [sender, setSender] = useState((initialParams?.sender as string) || "");
-  const [message, setMessage] = useState((initialParams?.message as string) || "");
-  const [selectedImage, setSelectedImage] = useState((initialParams?.image as string) || "user-tamegaki.png");
-  const [selectedColor, setSelectedColor] = useState((initialParams?.color as string) || "#ffffff");
-  const previewRef = useRef<HTMLDivElement>(null);
+    const [name, setName] = useState((initialParams?.name as string) || "");
+    const [nameTitle, setNameTitle] = useState((initialParams?.nameTitle as string) || "");
+    const [sender, setSender] = useState((initialParams?.sender as string) || "");
+    const [senderTitle, setSenderTitle] = useState((initialParams?.senderTitle as string) || "");
+    const [senderImage, setSenderImage] = useState((initialParams?.senderImage as string) || "");
+    const [message, setMessage] = useState((initialParams?.message as string) || "");
+    const [selectedImage, setSelectedImage] = useState((initialParams?.image as string) || "1.png");
+    const [selectedColor, setSelectedColor] = useState((initialParams?.color as string) || "#ffffff");
+    const previewRef = useRef<HTMLDivElement>(null);
 
-  const prefix = '';
+    const prefix = '';
 
-  const backgrounds = [
-    { file: "user-tamegaki.png", font: "var(--font-shippori-mincho)", label: "筆文字 (明朝)" },
-    { file: "image2.png", font: "var(--font-noto-sans-jp)", label: "ゴシック" },
-    { file: "image3.png", font: "var(--font-yuji-syuku)", label: "筆文字 (行書)" },
-    { file: "image4.png", font: "var(--font-zen-antique)", label: "アンティーク" },
-  ];
+    const handleSenderImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setSenderImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-  const colors = [
-    { code: "#ffffff", label: "白" },
-    { code: "#fcfaf2", label: "生成" },
-    { code: "#fff0f5", label: "桜" },
-    { code: "#f0f8ff", label: "空" },
-    { code: "#f0fff0", label: "若草" },
-    { code: "#fffacd", label: "檸檬" },
-    { code: "#e6e6fa", label: "藤" },
-    { code: "#ffdab9", label: "桃" },
-    { code: "#e0ffff", label: "水" },
-    { code: "#d1ffdb", label: "柳" },
-    { code: "#ffe4c4", label: "杏" },
-    { code: "#ffb6c1", label: "撫子" },
-    { code: "#dda0dd", label: "菫" },
-    { code: "#afeeee", label: "浅葱" },
-    { code: "#98fb98", label: "抹茶" },
-    { code: "#fafad2", label: "黄金" },
-    { code: "#dcdcdc", label: "銀鼠" },
-    { code: "#ffa07a", label: "珊瑚" },
-    { code: "#7fffd4", label: "翡翠" },
-    { code: "#87cefa", label: "露草" },
-    { code: "#faebd7", label: "練色" },
-  ];
+    const backgrounds = [
+        { file: "1.png", font: "var(--font-shippori-mincho)", label: "" },
+        { file: "2.png", font: "var(--font-noto-sans-jp)", label: "" },
+        { file: "3.png", font: "var(--font-yuji-syuku)", label: "" },
+        { file: "4.png", font: "var(--font-noto-sans-jp)", label: "" },
+        { file: "5.png", font: "var(--font-noto-sans-jp)", label: "" },
+    ];
 
-  const currentFont = backgrounds.find(b => b.file === selectedImage)?.font || "var(--font-shippori-mincho)";
+    const colors = [
+        { code: "#ffffff", label: "白" },
+        { code: "#fcfaf2", label: "生成" },
+        { code: "#fff0f5", label: "桜" },
+        { code: "#f0f8ff", label: "空" },
+        { code: "#f0fff0", label: "若草" },
+        { code: "#fffacd", label: "檸檬" },
+        { code: "#e6e6fa", label: "藤" },
+        { code: "#ffdab9", label: "桃" },
+        { code: "#e0ffff", label: "水" },
+        { code: "#d1ffdb", label: "柳" },
+        { code: "#ffe4c4", label: "杏" },
+        { code: "#ffb6c1", label: "撫子" },
+        { code: "#dda0dd", label: "菫" },
+        { code: "#afeeee", label: "浅葱" },
+        { code: "#98fb98", label: "抹茶" },
+        { code: "#fafad2", label: "黄金" },
+        { code: "#dcdcdc", label: "銀鼠" },
+        { code: "#ffa07a", label: "珊瑚" },
+        { code: "#7fffd4", label: "翡翠" },
+        { code: "#87cefa", label: "露草" },
+        { code: "#faebd7", label: "練色" },
+    ];
 
-  const handleDownload = async () => {
-    if (previewRef.current === null) {
-      return;
-    }
+    const currentFont = backgrounds.find(b => b.file === selectedImage)?.font || "var(--font-shippori-mincho)";
 
-    try {
-      const dataUrl = await toPng(previewRef.current, { cacheBust: true, pixelRatio: 2 });
-      const link = document.createElement('a');
-      link.download = 'tamegaki.png';
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error('Download failed', err);
-    }
-  };
+    const handleDownload = async () => {
+        if (previewRef.current === null) {
+            return;
+        }
 
-  const getShareUrl = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("name", name);
-    url.searchParams.set("sender", sender);
-    if (message) url.searchParams.set("message", message);
-    url.searchParams.set("image", selectedImage);
-    url.searchParams.set("font", currentFont);
-    url.searchParams.set("color", selectedColor);
-    return url.toString();
-  };
+        try {
+            const dataUrl = await toPng(previewRef.current, { cacheBust: true, pixelRatio: 2 });
+            const link = document.createElement('a');
+            link.download = 'tamegaki.png';
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            console.error('Download failed', err);
+        }
+    };
 
-  const handleTwitterShare = () => {
-    const url = getShareUrl();
-    const text = `${name || '候補者'}殿への為書きを作成しました。 #為書きジェネレーター`;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
-  };
+    const getShareUrl = () => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("name", name);
+        if (nameTitle) url.searchParams.set("nameTitle", nameTitle);
+        url.searchParams.set("sender", sender);
+        if (senderTitle) url.searchParams.set("senderTitle", senderTitle);
+        if (message) url.searchParams.set("message", message);
+        url.searchParams.set("image", selectedImage);
+        url.searchParams.set("font", currentFont);
+        url.searchParams.set("color", selectedColor);
+        return url.toString();
+    };
 
-  const handleFacebookShare = () => {
-    const url = getShareUrl();
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-  };
+    const handleTwitterShare = () => {
+        const url = getShareUrl();
+        const text = `${name || '候補者'}殿への為書きを作成しました。 #為書きジェネレーター`;
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    };
 
-  const handleShare = async () => {
-    const url = getShareUrl();
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: '為書きジェネレーター',
-          text: `${name || '候補者'}殿への為書きを作成しました。`,
-          url: url,
-        });
-      } catch (err) {
-        console.error('Share failed', err);
-      }
-    } else {
-      await navigator.clipboard.writeText(url);
-      alert('URLをコピーしました！');
-    }
-  };
+    const handleFacebookShare = () => {
+        const url = getShareUrl();
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    };
 
-  return (
-    <div className="w-full max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8">
-      {/* Input Form */}
-      <div className="w-full md:w-1/3 flex flex-col gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
-        {/* ... (Header and Description) ... */}
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <span className="w-1 h-6 bg-black rounded-full"></span>
-            入力フォーム
-          </h2>
-          <p className="text-sm text-gray-500">
-            必要な情報を入力してください。プレビューにリアルタイムで反映されます。
-          </p>
-        </div>
+    const handleShare = async () => {
+        const url = getShareUrl();
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: '為書きジェネレーター',
+                    text: `${name || '候補者'}殿への為書きを作成しました。`,
+                    url: url,
+                });
+            } catch (err) {
+                console.error('Share failed', err);
+            }
+        } else {
+            await navigator.clipboard.writeText(url);
+            alert('URLをコピーしました！');
+        }
+    };
 
-        <div className="space-y-6">
-          {/* ... (Image Switcher, Color Switcher, Inputs) ... */}
-          {/* Image Switcher - Circular Buttons */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              デザイン選択
-            </label>
-            <div className="flex flex-wrap gap-3">
-              {backgrounds.map((bg) => (
-                <button
-                  key={bg.file}
-                  onClick={() => setSelectedImage(bg.file)}
-                  className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all transform hover:scale-105 ${selectedImage === bg.file
-                    ? "border-black ring-2 ring-black ring-offset-2 scale-105"
-                    : "border-gray-200 hover:border-gray-400"
-                    }`}
-                  title={bg.label}
-                >
-                  <img
-                    src={`${prefix}/${bg.file}`}
-                    alt={bg.label}
-                    className="w-full h-full object-cover"
-                    style={{ objectPosition: "center 15%" }}
-                  />
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {backgrounds.find(b => b.file === selectedImage)?.label}
-            </p>
-          </div>
-
-          {/* Color Switcher */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              背景色変更
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {colors.map((c) => (
-                <button
-                  key={c.code}
-                  onClick={() => setSelectedColor(c.code)}
-                  className={`w-8 h-8 rounded-full border transition-all transform hover:scale-110 ${selectedColor === c.code
-                    ? "ring-2 ring-black ring-offset-2 scale-110 border-gray-400"
-                    : "border-gray-200 hover:border-gray-400"
-                    }`}
-                  style={{ backgroundColor: c.code }}
-                  title={c.label}
-                />
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              {colors.find(c => c.code === selectedColor)?.label}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              候補者名 (6文字以内推奨)
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="例：山田太郎"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              贈呈者名
-            </label>
-            <input
-              type="text"
-              value={sender}
-              onChange={(e) => setSender(e.target.value)}
-              placeholder="例：鈴木花子"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              応援メッセージ
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="例：必勝！"
-              rows={3}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50 resize-none"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <div className="flex gap-3">
-            <button
-              onClick={handleTwitterShare}
-              className="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
-            >
-              <Twitter className="w-5 h-5" />
-              Xで投稿
-            </button>
-            <button
-              onClick={handleFacebookShare}
-              className="flex-1 bg-[#1877F2] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#166fe5] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
-            >
-              <Facebook className="w-5 h-5" />
-              シェア
-            </button>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleShare}
-              className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-300 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
-            >
-              <Share2 className="w-5 h-5" />
-              リンク
-            </button>
-            <button
-              onClick={handleDownload}
-              className="flex-1 bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
-            >
-              <Download className="w-5 h-5" />
-              保存
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Preview Area */}
-      <div className="w-full md:w-2/3 bg-gray-100 rounded-xl p-4 md:p-8 flex items-center justify-center min-h-[600px]">
-        <div
-          ref={previewRef}
-          className="relative w-full max-w-[600px] shadow-2xl overflow-hidden"
-          style={{ aspectRatio: '4/5', backgroundColor: selectedColor }}
-        >
-          {/* Background Image with Multiply Blend Mode */}
-          <img
-            src={`${prefix}/${selectedImage}`}
-            alt="Tamegaki Background"
-            className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
-          />
-
-          {/* Content Overlay */}
-          <div className="absolute inset-0 p-[8%] text-black font-serif" style={{ fontFamily: currentFont }}>
-            <div className="relative w-full h-full flex flex-col items-center justify-center">
-              {/* Candidate Name - Right side (Absolute Position) */}
-              <div
-                className="absolute z-10 flex flex-row items-center" // flex-row for T-to-B in vertical-rl
-                style={{
-                  right: '8.33%',  // 100px / 1200px (Moved 20px right from 120px)
-                  top: '10%',      // 150px / 1500px
-                  height: '80%',   // Allow space for long names
-                  writingMode: 'vertical-rl',
-                }}
-              >
-                <h1 className="text-5xl md:text-[4rem] font-black tracking-widest leading-tight" style={{ fontFamily: currentFont }}>
-                  {name || "候補者名"}
-                </h1>
-                <div className="mt-4 text-2xl md:text-3xl" style={{ fontFamily: currentFont }}>殿</div>
-              </div>
-
-              {/* Message - Middle (Absolute Position) */}
-              <div
-                className="absolute z-10 flex flex-col items-center"
-                style={{
-                  right: '73.5%',  // 882px / 1200px (Moved 30px left from 852px)
-                  top: '26.6%',    // 400px / 1500px
-                  height: '60%',   // Constrain height to force wrapping
-                  maxHeight: '60%',
-                  writingMode: 'vertical-rl',
-                }}
-              >
-                {message && (
-                  <p className="text-xl md:text-2xl font-bold whitespace-pre-wrap text-center tracking-widest break-words leading-[26px] md:leading-[31px]" style={{ fontFamily: currentFont }}>
-                    {message}
-                  </p>
-                )}
-              </div>
-
-              {/* Sender Name - Left side (Absolute Position) */}
-              <div
-                className="absolute z-10 flex flex-col items-end" // flex-col for R-to-L columns
-                style={{
-                  right: '86%',    // 1032px / 1200px (Moved 10px left from 1022px)
-                  top: '46.6%',    // 700px / 1500px
-                  height: '40%',   // Allow space
-                  writingMode: 'vertical-rl',
-                }}
-              >
-                <div className="flex flex-col items-center">
-                  <p className="text-3xl md:text-4xl font-bold tracking-wider" style={{ fontFamily: currentFont }}>
-                    {sender || "贈呈者名"}
-                  </p>
+    return (
+        <div className="w-full max-w-6xl mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-8">
+            {/* Input Form */}
+            <div className="w-full md:w-1/3 flex flex-col gap-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit">
+                <div className="space-y-2">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-black rounded-full"></span>
+                        入力フォーム
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                        選挙や応援に使える「為書き」をWeb上で簡単に作成・シェアできます。
+                    </p>
                 </div>
-              </div>
+
+                <div className="space-y-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                            デザイン選択
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {backgrounds.map((bg) => (
+                                <button
+                                    key={bg.file}
+                                    onClick={() => setSelectedImage(bg.file)}
+                                    className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all transform hover:scale-105 ${selectedImage === bg.file
+                                        ? "border-black ring-2 ring-black ring-offset-2 scale-105"
+                                        : "border-gray-200 hover:border-gray-400"
+                                        }`}
+                                >
+                                    <img
+                                        src={`${prefix}/${bg.file}`}
+                                        alt="background"
+                                        className="w-full h-full object-cover"
+                                        style={{ objectPosition: "center 15%" }}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                            背景色変更
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                            {colors.map((c) => (
+                                <button
+                                    key={c.code}
+                                    onClick={() => setSelectedColor(c.code)}
+                                    className={`w-8 h-8 rounded-full border transition-all transform hover:scale-110 ${selectedColor === c.code
+                                        ? "ring-2 ring-black ring-offset-2 scale-110 border-gray-400"
+                                        : "border-gray-200 hover:border-gray-400"
+                                        }`}
+                                    style={{ backgroundColor: c.code }}
+                                    title={c.label}
+                                />
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                            {colors.find(c => c.code === selectedColor)?.label}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                肩書き (候補者)
+                            </label>
+                            <input
+                                type="text"
+                                value={nameTitle}
+                                onChange={(e) => setNameTitle(e.target.value)}
+                                placeholder="◯◯◯◯議員候補"
+                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50 text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                候補者名
+                            </label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                placeholder="候補者名"
+                                className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            肩書き (送り主)
+                        </label>
+                        <input
+                            type="text"
+                            value={senderTitle}
+                            onChange={(e) => setSenderTitle(e.target.value)}
+                            placeholder="肩書き"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            送り主名
+                        </label>
+                        <input
+                            type="text"
+                            value={sender}
+                            onChange={(e) => setSender(e.target.value)}
+                            placeholder="送り主名"
+                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        送り主画像
+                    </label>
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleSenderImageUpload}
+                        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-50 file:text-black hover:file:bg-gray-100 transition-all border border-gray-200 rounded-lg"
+                    />
+                    {senderImage && (
+                        <button
+                            onClick={() => setSenderImage("")}
+                            className="mt-2 text-xs text-red-500 hover:text-red-700 underline"
+                        >
+                            画像を削除
+                        </button>
+                    )}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        応援メッセージ
+                    </label>
+                    <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="◯◯さん、いつも応援しています。頑張ってください！"
+                        rows={3}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-black focus:border-transparent transition-all outline-none bg-gray-50 resize-none"
+                    />
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+
+
+
+            <div className="w-full md:w-2/3 bg-gray-100 rounded-xl p-4 md:p-8 flex flex-col items-center justify-center min-h-[600px] gap-6">
+                <div
+                    ref={previewRef}
+                    className="relative w-full max-w-[600px] shadow-2xl overflow-hidden"
+                    style={{ aspectRatio: '4/5', backgroundColor: selectedColor }}
+                >
+                    <img
+                        src={`${prefix}/${selectedImage}`}
+                        alt="Tamegaki Background"
+                        className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
+                    />
+
+                    <div className="absolute inset-0 p-[8%] text-black font-serif" style={{ fontFamily: currentFont }}>
+                        <div className="relative w-full h-full flex flex-col items-center justify-center">
+
+                            <div
+                                className="absolute z-10 flex flex-col items-center whitespace-nowrap"
+                                style={{
+                                    right: '0%',
+                                    top: '11.33%',
+                                    writingMode: 'vertical-rl',
+                                }}
+                            >
+                                <p
+                                    className={clsx(
+                                        "text-3xl md:text-4xl font-bold tracking-widest",
+                                        !nameTitle ? "text-gray-400" : "text-black"
+                                    )}
+                                    style={{ fontFamily: currentFont }}
+                                >
+                                    {nameTitle || "◯◯◯◯議員候補"}
+                                </p>
+                            </div>
+
+                            <div
+                                className="absolute z-10 flex flex-row items-center"
+                                style={{
+                                    right: '8.33%',
+                                    top: '16.66%',
+                                    height: '80%',
+                                    writingMode: 'vertical-rl',
+                                }}
+                            >
+                                <h1
+                                    className={clsx(
+                                        "text-4xl md:text-[3.2rem] font-black tracking-widest leading-tight",
+                                        !name ? "text-gray-400" : "text-black"
+                                    )}
+                                    style={{ fontFamily: currentFont }}
+                                >
+                                    {name || "候補者名"}
+                                </h1>
+                                <div className="mt-4 text-2xl md:text-3xl" style={{ fontFamily: currentFont }}>殿</div>
+                            </div>
+
+                            <div
+                                className="absolute z-10 flex flex-col items-start justify-start"
+                                style={{
+                                    right: '0%',
+                                    top: '94%',
+                                    width: '100%',
+                                    writingMode: 'horizontal-tb',
+                                }}
+                            >
+                                <p
+                                    className={clsx(
+                                        "text-[16px] md:text-[18px] font-bold whitespace-pre-wrap text-left tracking-widest break-words leading-[20px] md:leading-[24px]",
+                                        !message ? "text-gray-400" : "text-black"
+                                    )}
+                                    style={{ fontFamily: currentFont }}
+                                >
+                                    {message || "◯◯さん、いつも応援しています。頑張ってください！"}
+                                </p>
+                            </div>
+
+                            <div
+                                className="absolute z-10 flex flex-col items-start whitespace-nowrap"
+                                style={{
+                                    right: '80%',
+                                    top: '36%',
+                                    height: '40%',
+                                    writingMode: 'vertical-rl',
+                                }}
+                            >
+                                <p
+                                    className={clsx(
+                                        "text-2xl md:text-[1.9rem] font-bold tracking-widest",
+                                        !senderTitle ? "text-gray-400" : "text-black"
+                                    )}
+                                    style={{ fontFamily: currentFont }}
+                                >
+                                    {senderTitle || "肩書き"}
+                                </p>
+                            </div>
+
+                            {senderImage && (
+                                <div
+                                    className="absolute z-10 flex items-center justify-center"
+                                    style={{
+                                        right: '79.33%',
+                                        top: '15.33%',
+                                        width: '16.6%',
+                                        height: '13.3%',
+                                    }}
+                                >
+                                    <img
+                                        src={senderImage}
+                                        alt="Sender"
+                                        className="w-full h-full object-cover rounded-full"
+                                    />
+                                </div>
+                            )}
+
+                            <div
+                                className="absolute z-10 flex flex-col items-start"
+                                style={{
+                                    right: '87.66%',
+                                    top: '42%',
+                                    height: '70%',
+                                    writingMode: 'vertical-rl',
+                                }}
+                            >
+                                <div className="flex flex-col items-center">
+                                    <p
+                                        className={clsx(
+                                            "text-3xl md:text-[2.5rem] font-bold tracking-wider",
+                                            !sender ? "text-gray-400" : "text-black"
+                                        )}
+                                        style={{ fontFamily: currentFont }}
+                                    >
+                                        {sender || "送り主名"}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full max-w-[600px] flex flex-col gap-3">
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleTwitterShare}
+                            className="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                        >
+                            <Twitter className="w-5 h-5" />
+                            Xで投稿
+                        </button>
+                        <button
+                            onClick={handleFacebookShare}
+                            className="flex-1 bg-[#1877F2] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#166fe5] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                        >
+                            <Facebook className="w-5 h-5" />
+                            シェア
+                        </button>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleShare}
+                            className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-300 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                        >
+                            <Share2 className="w-5 h-5" />
+                            リンク
+                        </button>
+                        <button
+                            onClick={handleDownload}
+                            className="flex-1 bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                        >
+                            <Download className="w-5 h-5" />
+                            保存
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div >
+    );
 }

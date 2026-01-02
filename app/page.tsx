@@ -47,11 +47,15 @@ export default async function Home({ searchParams }: Props) {
             為書きジェネレーター
           </h1>
           <p className="text-lg text-stone-600 max-w-2xl mx-auto">
-            選挙や応援に使える「為書き（必勝ビラ）」をWeb上で簡単に作成・シェアできます。
+            選挙や応援に使える「為書き」をWeb上で簡単に作成・シェアできます。
           </p>
         </div>
 
         <TamegakiPreview initialParams={params} />
+
+        <footer className="text-center text-stone-500 text-sm py-4">
+          このサイトは、<a href="https://x.com/ninofku" target="_blank" rel="noreferrer" className="underline hover:text-stone-800 transition-colors">ほづみゆうき</a>が作成したものです。
+        </footer>
       </div>
     </main>
   );
