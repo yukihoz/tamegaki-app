@@ -40,15 +40,30 @@ export async function GET(req: NextRequest) {
         const fontData = await fetch(new URL(fontUrl, import.meta.url)).then((res) => res.arrayBuffer());
 
         // Base Image loading
-        const protocol = req.headers.get('x-forwarded-proto') || 'http';
-        const host = req.headers.get('host');
-        const baseUrl = `${protocol}://${host}`;
+        const baseUrl = process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : new URL(req.url).origin;
+
         // Ensure we only load allowed images to prevent arbitrary file access
         const allowedImages = ['1.png', '2.png', '3.png', '4.png', '5.png'];
         const imageFile = allowedImages.includes(imageParam) ? imageParam : '1.png';
         const imageUrl = `${baseUrl}/${imageFile}`;
 
-        const imageData = await fetch(imageUrl).then((res) => res.arrayBuffer());
+        let imageSrc = imageUrl;
+        try {
+            const res = await fetch(imageUrl);
+            if (!res.ok) {
+                console.error(`Failed to fetch image: ${res.status} ${res.statusText}`);
+                throw new Error(`Failed to fetch image`);
+            }
+            const buffer = await res.arrayBuffer();
+            const base64 = Buffer.from(buffer).toString('base64');
+            imageSrc = `data:image/png;base64,${base64}`;
+        } catch (e: any) {
+            console.error('Error fetching image fallback:', e);
+            // If fetch fails, we keep imageSrc as URL and hope satori can resolve it,
+            // or we could throw. But logging is key.
+        }
 
         return new ImageResponse(
             (
@@ -68,7 +83,7 @@ export async function GET(req: NextRequest) {
                         If not supported, the background color will just be hidden by the opaque image.
                     */}
                     <img
-                        src={imageUrl}
+                        src={imageSrc}
                         alt="Background"
                         style={{
                             position: 'absolute',
