@@ -12,6 +12,8 @@ export async function generateMetadata(
 ): Promise<Metadata> {
     const params = await searchParams;
     const imgUrl = (params.img as string) || "";
+    // Prefer padded OGP image if available, otherwise fallback to main image
+    const ogUrl = (params.og as string) || imgUrl;
 
     if (!imgUrl) {
         return {
@@ -24,11 +26,11 @@ export async function generateMetadata(
         title: "為書きを作成しました | 為書きジェネレーター",
         description: "選挙や応援に使える「為書き」をWeb上で簡単に作成・シェアできます。",
         openGraph: {
-            images: [imgUrl],
+            images: [ogUrl],
         },
         twitter: {
             card: 'summary_large_image',
-            images: [imgUrl],
+            images: [ogUrl],
         }
     };
 }
@@ -55,23 +57,23 @@ export default async function SharePage({ searchParams }: Props) {
     }
 
     return (
-        <main className="min-h-screen bg-stone-100 py-12 px-4 sm:px-6 lg:px-8 font-sans text-stone-900">
-            <div className="max-w-4xl mx-auto space-y-8 flex flex-col items-center">
-                <div className="text-center space-y-4">
-                    <h1 className="text-3xl font-bold tracking-tight text-stone-900 font-serif">
+        <main className="min-h-screen bg-stone-100 py-8 px-4 sm:px-6 lg:px-8 font-sans text-stone-900 flex flex-col items-center justify-center">
+            <div className="max-w-4xl mx-auto space-y-6 flex flex-col items-center w-full">
+                <div className="text-center space-y-2">
+                    <h1 className="text-2xl font-bold tracking-tight text-stone-900 font-serif">
                         為書きが届きました
                     </h1>
-                    <p className="text-lg text-stone-600">
+                    <p className="text-sm text-stone-600">
                         この画像を保存して、SNSでシェアしましょう。
                     </p>
                 </div>
 
-                <div className="w-full max-w-[600px] shadow-2xl rounded-sm overflow-hidden bg-white">
+                <div className="w-full max-w-[600px] shadow-2xl rounded-sm overflow-hidden bg-white max-h-[75vh] flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src={imgUrl}
                         alt="為書き"
-                        className="w-full h-auto"
+                        className="w-full h-full object-contain max-h-[75vh]"
                     />
                 </div>
 

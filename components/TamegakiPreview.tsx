@@ -87,27 +87,65 @@ export function TamegakiPreview({ initialParams }: Props) {
         }
     };
 
-    const uploadImage = async (): Promise<string | null> => {
+    const uploadImage = async (): Promise<{ imageUrl: string; ogUrl: string } | null> => {
         if (!previewRef.current) return null;
         setIsUploading(true);
         try {
-            // Generate PNG directly (returns data URL)
+            // 1. Generate Original Image (Vertical)
             const dataUrl = await toPng(previewRef.current, { cacheBust: true, pixelRatio: 2 });
-
-            // Convert data URL to Blob
             const res = await fetch(dataUrl);
             const blob = await res.blob();
 
-            // Upload to Vercel Blob
-            const response = await fetch(`/api/upload?filename=tamegaki-${Date.now()}.png`, {
+            // 2. Generate Padded OGP Image (Horizontal 1200x630)
+            const ogCanvas = document.createElement('canvas');
+            ogCanvas.width = 1200;
+            ogCanvas.height = 630;
+            const ctx = ogCanvas.getContext('2d');
+
+            if (ctx) {
+                // Fill background
+                ctx.fillStyle = selectedColor;
+                ctx.fillRect(0, 0, 1200, 630);
+
+                // Load original image to draw on canvas
+                const img = new window.Image();
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = dataUrl;
+                });
+
+                // Calculate dimensions to fit height (contain)
+                // Source: 1200x1500 -> Target height 630
+                // Scale factor = 630 / 1500 = 0.42
+                const scale = 630 / img.height;
+                const drawWidth = img.width * scale;
+                const drawHeight = 630;
+                const startX = (1200 - drawWidth) / 2;
+
+                ctx.drawImage(img, startX, 0, drawWidth, drawHeight);
+            }
+
+            const ogBlob = await new Promise<Blob | null>(resolve => ogCanvas.toBlob(resolve, 'image/png'));
+            if (!ogBlob) throw new Error('Failed to create OGP image');
+
+            // 3. Upload Original
+            const uploadRes = await fetch(`/api/upload?filename=tamegaki-${Date.now()}.png`, {
                 method: 'POST',
                 body: blob,
             });
+            if (!uploadRes.ok) throw new Error('Upload failed');
+            const newBlob = await uploadRes.json();
 
-            if (!response.ok) throw new Error('Upload failed');
+            // 4. Upload OGP
+            const ogUploadRes = await fetch(`/api/upload?filename=tamegaki-og-${Date.now()}.png`, {
+                method: 'POST',
+                body: ogBlob,
+            });
+            if (!ogUploadRes.ok) throw new Error('OGP Upload failed');
+            const newOgBlob = await ogUploadRes.json();
 
-            const newBlob = await response.json();
-            return newBlob.url;
+            return { imageUrl: newBlob.url, ogUrl: newOgBlob.url };
         } catch (error) {
             console.error(error);
             alert('画像のアップロードに失敗しました。');
@@ -118,27 +156,27 @@ export function TamegakiPreview({ initialParams }: Props) {
     };
 
     const handleTwitterShare = async () => {
-        const blobUrl = await uploadImage();
-        if (!blobUrl) return;
+        const result = await uploadImage();
+        if (!result) return;
 
-        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(blobUrl)}`;
+        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(result.imageUrl)}&og=${encodeURIComponent(result.ogUrl)}`;
         const text = `${name || '候補者'}殿への為書きを作成しました。 #為書きジェネレーター`;
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
     };
 
     const handleFacebookShare = async () => {
-        const blobUrl = await uploadImage();
-        if (!blobUrl) return;
+        const result = await uploadImage();
+        if (!result) return;
 
-        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(blobUrl)}`;
+        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(result.imageUrl)}&og=${encodeURIComponent(result.ogUrl)}`;
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
     };
 
     const handleShare = async () => {
-        const blobUrl = await uploadImage();
-        if (!blobUrl) return;
+        const result = await uploadImage();
+        if (!result) return;
 
-        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(blobUrl)}`;
+        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(result.imageUrl)}&og=${encodeURIComponent(result.ogUrl)}`;
         if (navigator.share) {
             try {
                 await navigator.share({
