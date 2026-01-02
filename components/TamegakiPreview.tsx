@@ -3,18 +3,24 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { clsx } from "clsx";
-import { Download, Share2 } from "lucide-react"; // Assuming lucide-react is installed for the icon
+import { Download, Share2, Facebook, Twitter } from "lucide-react"; // Assuming lucide-react is installed for the icon
 
 import { toPng } from 'html-to-image';
 import { useRef } from 'react';
 
-export function TamegakiPreview() {
-  const [name, setName] = useState("");
-  const [sender, setSender] = useState("");
-  const [message, setMessage] = useState("");
-  const [selectedImage, setSelectedImage] = useState("user-tamegaki.png");
-  const [selectedColor, setSelectedColor] = useState("#ffffff");
+type Props = {
+  initialParams?: { [key: string]: string | string[] | undefined };
+};
+
+export function TamegakiPreview({ initialParams }: Props) {
+  const [name, setName] = useState((initialParams?.name as string) || "");
+  const [sender, setSender] = useState((initialParams?.sender as string) || "");
+  const [message, setMessage] = useState((initialParams?.message as string) || "");
+  const [selectedImage, setSelectedImage] = useState((initialParams?.image as string) || "user-tamegaki.png");
+  const [selectedColor, setSelectedColor] = useState((initialParams?.color as string) || "#ffffff");
   const previewRef = useRef<HTMLDivElement>(null);
+
+  const prefix = '';
 
   const backgrounds = [
     { file: "user-tamegaki.png", font: "var(--font-shippori-mincho)", label: "筆文字 (明朝)" },
@@ -65,7 +71,7 @@ export function TamegakiPreview() {
     }
   };
 
-  const handleShare = async () => {
+  const getShareUrl = () => {
     const url = new URL(window.location.href);
     url.searchParams.set("name", name);
     url.searchParams.set("sender", sender);
@@ -73,19 +79,34 @@ export function TamegakiPreview() {
     url.searchParams.set("image", selectedImage);
     url.searchParams.set("font", currentFont);
     url.searchParams.set("color", selectedColor);
+    return url.toString();
+  };
 
+  const handleTwitterShare = () => {
+    const url = getShareUrl();
+    const text = `${name || '候補者'}殿への為書きを作成しました。 #為書きジェネレーター`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+  };
+
+  const handleFacebookShare = () => {
+    const url = getShareUrl();
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+  };
+
+  const handleShare = async () => {
+    const url = getShareUrl();
     if (navigator.share) {
       try {
         await navigator.share({
           title: '為書きジェネレーター',
           text: `${name || '候補者'}殿への為書きを作成しました。`,
-          url: url.toString(),
+          url: url,
         });
       } catch (err) {
         console.error('Share failed', err);
       }
     } else {
-      await navigator.clipboard.writeText(url.toString());
+      await navigator.clipboard.writeText(url);
       alert('URLをコピーしました！');
     }
   };
@@ -124,7 +145,7 @@ export function TamegakiPreview() {
                   title={bg.label}
                 >
                   <img
-                    src={`/${bg.file}`}
+                    src={`${prefix}/${bg.file}`}
                     alt={bg.label}
                     className="w-full h-full object-cover"
                     style={{ objectPosition: "center 15%" }}
@@ -201,21 +222,39 @@ export function TamegakiPreview() {
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <button
-            onClick={handleShare}
-            className="flex-1 bg-red-600 text-white font-bold py-4 px-6 rounded-lg hover:bg-red-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
-          >
-            <Share2 className="w-5 h-5" />
-            シェア
-          </button>
-          <button
-            onClick={handleDownload}
-            className="flex-1 bg-black text-white font-bold py-4 px-6 rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
-          >
-            <Download className="w-5 h-5" />
-            保存
-          </button>
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <button
+              onClick={handleTwitterShare}
+              className="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+            >
+              <Twitter className="w-5 h-5" />
+              Xで投稿
+            </button>
+            <button
+              onClick={handleFacebookShare}
+              className="flex-1 bg-[#1877F2] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#166fe5] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+            >
+              <Facebook className="w-5 h-5" />
+              シェア
+            </button>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={handleShare}
+              className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-300 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+            >
+              <Share2 className="w-5 h-5" />
+              リンク
+            </button>
+            <button
+              onClick={handleDownload}
+              className="flex-1 bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+            >
+              <Download className="w-5 h-5" />
+              保存
+            </button>
+          </div>
         </div>
       </div>
 
@@ -228,7 +267,7 @@ export function TamegakiPreview() {
         >
           {/* Background Image with Multiply Blend Mode */}
           <img
-            src={`/${selectedImage}`}
+            src={`${prefix}/${selectedImage}`}
             alt="Tamegaki Background"
             className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
           />
