@@ -12,6 +12,7 @@ export async function POST(request: Request) {
     try {
         const blob = await put(filename, request.body, {
             access: 'public',
+            contentType: 'image/png',
         });
 
         return NextResponse.json(blob);
