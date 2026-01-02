@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { clsx } from "clsx";
-import { Download, Share2, Facebook, Twitter } from "lucide-react";
+import { Download, Share2, Facebook, Twitter, Loader2 } from "lucide-react";
 
 import { toPng } from 'html-to-image';
 import { useRef } from 'react';
@@ -21,6 +21,7 @@ export function TamegakiPreview({ initialParams }: Props) {
     const [message, setMessage] = useState((initialParams?.message as string) || "");
     const [selectedImage, setSelectedImage] = useState((initialParams?.image as string) || "1.png");
     const [selectedColor, setSelectedColor] = useState((initialParams?.color as string) || "#ffffff");
+    const [isUploading, setIsUploading] = useState(false);
     const previewRef = useRef<HTMLDivElement>(null);
 
     const prefix = '';
@@ -86,50 +87,70 @@ export function TamegakiPreview({ initialParams }: Props) {
         }
     };
 
-    const getShareUrl = () => {
-        const url = new URL(window.location.href);
-        url.searchParams.set("name", name);
-        if (nameTitle) url.searchParams.set("nameTitle", nameTitle);
-        url.searchParams.set("sender", sender);
-        if (senderTitle) url.searchParams.set("senderTitle", senderTitle);
-        if (message) url.searchParams.set("message", message);
-        url.searchParams.set("image", selectedImage);
-        url.searchParams.set("font", currentFont);
-        url.searchParams.set("color", selectedColor);
+    const uploadImage = async (): Promise<string | null> => {
+        if (!previewRef.current) return null;
+        setIsUploading(true);
+        try {
+            // Generate PNG directly (returns data URL)
+            const dataUrl = await toPng(previewRef.current, { cacheBust: true, pixelRatio: 2 });
 
-        // Exclude senderImage if it's a data URL (Base64) to prevent URI Too Large errors
-        if (senderImage && !senderImage.startsWith('data:')) {
-            url.searchParams.set("senderImage", senderImage);
+            // Convert data URL to Blob
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+
+            // Upload to Vercel Blob
+            const response = await fetch(`/api/upload?filename=tamegaki-${Date.now()}.png`, {
+                method: 'POST',
+                body: blob,
+            });
+
+            if (!response.ok) throw new Error('Upload failed');
+
+            const newBlob = await response.json();
+            return newBlob.url;
+        } catch (error) {
+            console.error(error);
+            alert('画像のアップロードに失敗しました。');
+            return null;
+        } finally {
+            setIsUploading(false);
         }
-
-        return url.toString();
     };
 
-    const handleTwitterShare = () => {
-        const url = getShareUrl();
+    const handleTwitterShare = async () => {
+        const blobUrl = await uploadImage();
+        if (!blobUrl) return;
+
+        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(blobUrl)}`;
         const text = `${name || '候補者'}殿への為書きを作成しました。 #為書きジェネレーター`;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
     };
 
-    const handleFacebookShare = () => {
-        const url = getShareUrl();
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    const handleFacebookShare = async () => {
+        const blobUrl = await uploadImage();
+        if (!blobUrl) return;
+
+        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(blobUrl)}`;
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
     };
 
     const handleShare = async () => {
-        const url = getShareUrl();
+        const blobUrl = await uploadImage();
+        if (!blobUrl) return;
+
+        const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(blobUrl)}`;
         if (navigator.share) {
             try {
                 await navigator.share({
                     title: '為書きジェネレーター',
                     text: `${name || '候補者'}殿への為書きを作成しました。`,
-                    url: url,
+                    url: shareUrl,
                 });
             } catch (err) {
                 console.error('Share failed', err);
             }
         } else {
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(shareUrl);
             alert('URLをコピーしました！');
         }
     };
@@ -430,26 +451,29 @@ export function TamegakiPreview({ initialParams }: Props) {
                     <div className="flex gap-3">
                         <button
                             onClick={handleTwitterShare}
-                            className="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                            disabled={isUploading}
+                            className="flex-1 bg-black text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            <Twitter className="w-5 h-5" />
-                            Xで投稿
+                            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Twitter className="w-5 h-5" />}
+                            {isUploading ? '作成中...' : 'Xで投稿'}
                         </button>
                         <button
                             onClick={handleFacebookShare}
-                            className="flex-1 bg-[#1877F2] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#166fe5] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                            disabled={isUploading}
+                            className="flex-1 bg-[#1877F2] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#166fe5] transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            <Facebook className="w-5 h-5" />
-                            シェア
+                            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Facebook className="w-5 h-5" />}
+                            {isUploading ? '作成中...' : 'シェア'}
                         </button>
                     </div>
                     <div className="flex gap-3">
                         <button
                             onClick={handleShare}
-                            className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-300 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2"
+                            disabled={isUploading}
+                            className="flex-1 bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg hover:bg-gray-300 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            <Share2 className="w-5 h-5" />
-                            リンク
+                            {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />}
+                            {isUploading ? '作成中...' : 'リンク'}
                         </button>
                         <button
                             onClick={handleDownload}
