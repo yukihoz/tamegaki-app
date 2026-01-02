@@ -96,6 +96,12 @@ export function TamegakiPreview({ initialParams }: Props) {
         url.searchParams.set("image", selectedImage);
         url.searchParams.set("font", currentFont);
         url.searchParams.set("color", selectedColor);
+
+        // Exclude senderImage if it's a data URL (Base64) to prevent URI Too Large errors
+        if (senderImage && !senderImage.startsWith('data:')) {
+            url.searchParams.set("senderImage", senderImage);
+        }
+
         return url.toString();
     };
 
