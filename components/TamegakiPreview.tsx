@@ -103,9 +103,14 @@ export function TamegakiPreview({ initialParams }: Props) {
             const ctx = ogCanvas.getContext('2d');
 
             if (ctx) {
-                // Fill background
-                ctx.fillStyle = selectedColor;
-                ctx.fillRect(0, 0, 1200, 630);
+                // Load and draw cover background
+                const coverImg = new window.Image();
+                await new Promise((resolve, reject) => {
+                    coverImg.onload = resolve;
+                    coverImg.onerror = reject;
+                    coverImg.src = '/images/cover2.png';
+                });
+                ctx.drawImage(coverImg, 0, 0, 1200, 630);
 
                 // Load original image to draw on canvas
                 const img = new window.Image();
@@ -121,7 +126,9 @@ export function TamegakiPreview({ initialParams }: Props) {
                 const scale = 630 / img.height;
                 const drawWidth = img.width * scale;
                 const drawHeight = 630;
-                const startX = (1200 - drawWidth) / 2;
+
+                // Position at x=45 as requested
+                const startX = 45;
 
                 ctx.drawImage(img, startX, 0, drawWidth, drawHeight);
             }
