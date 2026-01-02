@@ -11,7 +11,10 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const params = await searchParams;
   const name = params.name ?? '';
+  const nameTitle = params.nameTitle ?? '';
   const sender = params.sender ?? '';
+  const senderTitle = params.senderTitle ?? '';
+  const senderImage = params.senderImage ?? '';
   const message = params.message ?? '';
   const image = params.image ?? '';
   const font = params.font ?? '';
@@ -19,7 +22,10 @@ export async function generateMetadata(
 
   const ogUrl = new URL(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/og`);
   if (name) ogUrl.searchParams.set('name', name as string);
+  if (nameTitle) ogUrl.searchParams.set('nameTitle', nameTitle as string);
   if (sender) ogUrl.searchParams.set('sender', sender as string);
+  if (senderTitle) ogUrl.searchParams.set('senderTitle', senderTitle as string);
+  if (senderImage) ogUrl.searchParams.set('senderImage', senderImage as string);
   if (message) ogUrl.searchParams.set('message', message as string);
   if (image) ogUrl.searchParams.set('image', image as string);
   if (font) ogUrl.searchParams.set('font', font as string);
