@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { clsx } from "clsx";
 import { Download, Share2, Facebook, Twitter, Loader2 } from "lucide-react";
 
 import { toPng } from 'html-to-image';
-import { useRef } from 'react';
 
 type Props = {
     initialParams?: { [key: string]: string | string[] | undefined };
@@ -22,9 +21,29 @@ export function TamegakiPreview({ initialParams }: Props) {
     const [selectedImage, setSelectedImage] = useState((initialParams?.image as string) || "1.png");
     const [selectedColor, setSelectedColor] = useState((initialParams?.color as string) || "#ffffff");
     const [isUploading, setIsUploading] = useState(false);
+    const [scale, setScale] = useState(1);
+
+    const containerRef = useRef<HTMLDivElement>(null);
     const previewRef = useRef<HTMLDivElement>(null);
 
     const prefix = '';
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (containerRef.current) {
+                const { width } = containerRef.current.getBoundingClientRect();
+                // 600px is the base width of the preview
+                // We add some padding calculation if needed, but here we just take the container width.
+                // If container is smaller than 600, we scale down.
+                setScale(Math.min(width / 600, 1));
+            }
+        };
+
+        window.addEventListener('resize', updateScale);
+        updateScale(); // Initial calculation
+
+        return () => window.removeEventListener('resize', updateScale);
+    }, []);
 
     const handleSenderImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -108,7 +127,7 @@ export function TamegakiPreview({ initialParams }: Props) {
                 await new Promise((resolve, reject) => {
                     coverImg.onload = resolve;
                     coverImg.onerror = reject;
-                    coverImg.src = '/images/cover2.png';
+                    coverImg.src = '/images/base2.png';
                 });
                 ctx.drawImage(coverImg, 0, 0, 1200, 630);
 
@@ -127,8 +146,9 @@ export function TamegakiPreview({ initialParams }: Props) {
                 const drawWidth = img.width * scale;
                 const drawHeight = 630;
 
-                // Position at x=45 as requested
-                const startX = 45;
+                // Position at right side (1200 - width - margin)
+                // maintain same margin (45px) from edge
+                const startX = 1200 - drawWidth - 45;
 
                 ctx.drawImage(img, startX, 0, drawWidth, drawHeight);
             }
@@ -354,138 +374,161 @@ export function TamegakiPreview({ initialParams }: Props) {
 
 
 
-            <div className="w-full md:w-2/3 bg-gray-100 rounded-xl p-4 md:p-8 flex flex-col items-center justify-center min-h-[600px] gap-6">
+            <div className="w-full md:w-2/3 bg-gray-100 rounded-xl p-4 md:p-8 flex flex-col items-center justify-start min-h-[600px] gap-6">
+
+                {/* Scale Container */}
                 <div
-                    ref={previewRef}
-                    className="relative w-full max-w-[600px] shadow-2xl overflow-hidden"
-                    style={{ aspectRatio: '4/5', backgroundColor: selectedColor }}
+                    ref={containerRef}
+                    className="w-full flex justify-center overflow-hidden"
                 >
-                    <img
-                        src={`${prefix}/${selectedImage}`}
-                        alt="Tamegaki Background"
-                        className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
-                    />
+                    {/* Size Reservation Wrapper */}
+                    <div
+                        style={{
+                            width: 600 * scale,
+                            height: 750 * scale,
+                            position: 'relative',
+                        }}
+                    >
+                        {/* Actual Preview Element (Fixed 600x750) */}
+                        <div
+                            ref={previewRef}
+                            className="absolute top-0 left-0 bg-white shadow-2xl overflow-hidden"
+                            style={{
+                                width: 600,
+                                height: 750,
+                                backgroundColor: selectedColor,
+                                transform: `scale(${scale})`,
+                                transformOrigin: 'top left',
+                            }}
+                        >
+                            <img
+                                src={`${prefix}/${selectedImage}`}
+                                alt="Tamegaki Background"
+                                className="absolute inset-0 w-full h-full object-cover mix-blend-multiply"
+                            />
 
-                    <div className="absolute inset-0 p-[8%] text-black font-serif" style={{ fontFamily: currentFont }}>
-                        <div className="relative w-full h-full flex flex-col items-center justify-center">
+                            <div className="absolute inset-0 p-[8%] text-black font-serif" style={{ fontFamily: currentFont }}>
+                                <div className="relative w-full h-full flex flex-col items-center justify-center">
 
-                            <div
-                                className="absolute z-10 flex flex-col items-center whitespace-nowrap"
-                                style={{
-                                    right: '0%',
-                                    top: '11.33%',
-                                    writingMode: 'vertical-rl',
-                                }}
-                            >
-                                <p
-                                    className={clsx(
-                                        "text-3xl md:text-4xl font-bold tracking-widest",
-                                        !nameTitle ? "text-gray-400" : "text-black"
-                                    )}
-                                    style={{ fontFamily: currentFont }}
-                                >
-                                    {nameTitle || "◯◯◯◯議員候補"}
-                                </p>
-                            </div>
-
-                            <div
-                                className="absolute z-10 flex flex-row items-center"
-                                style={{
-                                    right: '8.33%',
-                                    top: '16.66%',
-                                    height: '80%',
-                                    writingMode: 'vertical-rl',
-                                }}
-                            >
-                                <h1
-                                    className={clsx(
-                                        "text-4xl md:text-[3.2rem] font-black tracking-widest leading-tight",
-                                        !name ? "text-gray-400" : "text-black"
-                                    )}
-                                    style={{ fontFamily: currentFont }}
-                                >
-                                    {name || "候補者名"}
-                                </h1>
-                                <div className="mt-4 text-2xl md:text-3xl" style={{ fontFamily: currentFont }}>殿</div>
-                            </div>
-
-                            <div
-                                className="absolute z-10 flex flex-col items-start justify-start"
-                                style={{
-                                    right: '0%',
-                                    top: '94%',
-                                    width: '100%',
-                                    writingMode: 'horizontal-tb',
-                                }}
-                            >
-                                <p
-                                    className={clsx(
-                                        "text-[16px] md:text-[18px] font-bold whitespace-pre-wrap text-left tracking-widest break-words leading-[20px] md:leading-[24px]",
-                                        !message ? "text-gray-400" : "text-black"
-                                    )}
-                                    style={{ fontFamily: currentFont }}
-                                >
-                                    {message || "◯◯さん、いつも応援しています。頑張ってください！"}
-                                </p>
-                            </div>
-
-                            <div
-                                className="absolute z-10 flex flex-col items-start whitespace-nowrap"
-                                style={{
-                                    right: '80%',
-                                    top: '36%',
-                                    height: '40%',
-                                    writingMode: 'vertical-rl',
-                                }}
-                            >
-                                <p
-                                    className={clsx(
-                                        "text-2xl md:text-[1.9rem] font-bold tracking-widest",
-                                        !senderTitle ? "text-gray-400" : "text-black"
-                                    )}
-                                    style={{ fontFamily: currentFont }}
-                                >
-                                    {senderTitle || "肩書き"}
-                                </p>
-                            </div>
-
-                            {senderImage && (
-                                <div
-                                    className="absolute z-10 flex items-center justify-center"
-                                    style={{
-                                        right: '79.33%',
-                                        top: '15.33%',
-                                        width: '16.6%',
-                                        height: '13.3%',
-                                    }}
-                                >
-                                    <img
-                                        src={senderImage}
-                                        alt="Sender"
-                                        className="w-full h-full object-cover rounded-full"
-                                    />
-                                </div>
-                            )}
-
-                            <div
-                                className="absolute z-10 flex flex-col items-start"
-                                style={{
-                                    right: '87.66%',
-                                    top: '42%',
-                                    height: '70%',
-                                    writingMode: 'vertical-rl',
-                                }}
-                            >
-                                <div className="flex flex-col items-center">
-                                    <p
-                                        className={clsx(
-                                            "text-3xl md:text-[2.5rem] font-bold tracking-wider",
-                                            !sender ? "text-gray-400" : "text-black"
-                                        )}
-                                        style={{ fontFamily: currentFont }}
+                                    <div
+                                        className="absolute z-10 flex flex-col items-center whitespace-nowrap"
+                                        style={{
+                                            right: '0%',
+                                            top: '11.33%',
+                                            writingMode: 'vertical-rl',
+                                        }}
                                     >
-                                        {sender || "送り主名"}
-                                    </p>
+                                        <p
+                                            className={clsx(
+                                                "text-4xl font-bold tracking-widest",
+                                                !nameTitle ? "text-gray-400" : "text-black"
+                                            )}
+                                            style={{ fontFamily: currentFont }}
+                                        >
+                                            {nameTitle || "◯◯◯◯議員候補"}
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        className="absolute z-10 flex flex-row items-center"
+                                        style={{
+                                            right: '8.33%',
+                                            top: '16.66%',
+                                            height: '80%',
+                                            writingMode: 'vertical-rl',
+                                        }}
+                                    >
+                                        <h1
+                                            className={clsx(
+                                                "text-[3.2rem] font-black tracking-widest leading-tight",
+                                                !name ? "text-gray-400" : "text-black"
+                                            )}
+                                            style={{ fontFamily: currentFont }}
+                                        >
+                                            {name || "候補者名"}
+                                        </h1>
+                                        <div className="mt-4 text-3xl" style={{ fontFamily: currentFont }}>殿</div>
+                                    </div>
+
+                                    <div
+                                        className="absolute z-10 flex flex-col items-start justify-start"
+                                        style={{
+                                            right: '0%',
+                                            top: '94%',
+                                            width: '100%',
+                                            writingMode: 'horizontal-tb',
+                                        }}
+                                    >
+                                        <p
+                                            className={clsx(
+                                                "text-[18px] font-bold whitespace-pre-wrap text-left tracking-widest break-words leading-[24px]",
+                                                !message ? "text-gray-400" : "text-black"
+                                            )}
+                                            style={{ fontFamily: currentFont }}
+                                        >
+                                            {message || "◯◯さん、いつも応援しています。頑張ってください！"}
+                                        </p>
+                                    </div>
+
+                                    <div
+                                        className="absolute z-10 flex flex-col items-start whitespace-nowrap"
+                                        style={{
+                                            right: '80%',
+                                            top: '36%',
+                                            height: '40%',
+                                            writingMode: 'vertical-rl',
+                                        }}
+                                    >
+                                        <p
+                                            className={clsx(
+                                                "text-[1.9rem] font-bold tracking-widest",
+                                                !senderTitle ? "text-gray-400" : "text-black"
+                                            )}
+                                            style={{ fontFamily: currentFont }}
+                                        >
+                                            {senderTitle || "肩書き"}
+                                        </p>
+                                    </div>
+
+                                    {senderImage && (
+                                        <div
+                                            className="absolute z-10 flex items-center justify-center"
+                                            style={{
+                                                right: '79.33%',
+                                                top: '15.33%',
+                                                width: '16.6%',
+                                                height: '13.3%',
+                                            }}
+                                        >
+                                            <img
+                                                src={senderImage}
+                                                alt="Sender"
+                                                className="w-full h-full object-cover rounded-full"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div
+                                        className="absolute z-10 flex flex-col items-start"
+                                        style={{
+                                            right: '87.66%',
+                                            top: '42%',
+                                            height: '70%',
+                                            writingMode: 'vertical-rl',
+                                        }}
+                                    >
+                                        <div className="flex flex-col items-center">
+                                            <p
+                                                className={clsx(
+                                                    "text-[2.5rem] font-bold tracking-wider",
+                                                    !sender ? "text-gray-400" : "text-black"
+                                                )}
+                                                style={{ fontFamily: currentFont }}
+                                            >
+                                                {sender || "送り主名"}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
