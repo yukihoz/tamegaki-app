@@ -96,7 +96,16 @@ export function TamegakiPreview({ initialParams }: Props) {
         }
 
         try {
-            const dataUrl = await toPng(previewRef.current, { cacheBust: true, pixelRatio: 2 });
+            const dataUrl = await toPng(previewRef.current, {
+                cacheBust: true,
+                pixelRatio: 2,
+                width: 600,
+                height: 750,
+                style: {
+                    transform: 'none',
+                    transformOrigin: 'top left'
+                }
+            });
             const link = document.createElement('a');
             link.download = 'tamegaki.png';
             link.href = dataUrl;
@@ -111,7 +120,17 @@ export function TamegakiPreview({ initialParams }: Props) {
         setIsUploading(true);
         try {
             // 1. Generate Original Image (Vertical)
-            const dataUrl = await toPng(previewRef.current, { cacheBust: true, pixelRatio: 2 });
+            // Force capture at full scale (600x750) regardless of current screen scale
+            const dataUrl = await toPng(previewRef.current, {
+                cacheBust: true,
+                pixelRatio: 2,
+                width: 600,
+                height: 750,
+                style: {
+                    transform: 'none',
+                    transformOrigin: 'top left'
+                }
+            });
             const res = await fetch(dataUrl);
             const blob = await res.blob();
 
