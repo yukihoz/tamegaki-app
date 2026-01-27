@@ -31,13 +31,17 @@ export async function generateMetadata(
   if (font) ogUrl.searchParams.set('font', font as string);
   if (color) ogUrl.searchParams.set('color', color as string);
 
+  // Check if any main content is present
+  const hasContent = name || sender || message;
+  const ogImages = hasContent ? [ogUrl.toString()] : ["/tamegakitop.png"];
+
   return {
     openGraph: {
-      images: [ogUrl.toString()],
+      images: ogImages,
     },
     twitter: {
       card: 'summary_large_image',
-      images: [ogUrl.toString()],
+      images: ogImages,
     }
   };
 }
