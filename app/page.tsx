@@ -20,7 +20,9 @@ export async function generateMetadata(
   const font = params.font ?? '';
   const color = params.color ?? '';
 
-  const ogUrl = new URL(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/og`);
+  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+  const ogUrl = new URL(`${baseUrl}/api/og`);
+
   if (name) ogUrl.searchParams.set('name', name as string);
   if (nameTitle) ogUrl.searchParams.set('nameTitle', nameTitle as string);
   if (sender) ogUrl.searchParams.set('sender', sender as string);
@@ -33,7 +35,7 @@ export async function generateMetadata(
 
   // Check if any main content is present
   const hasContent = name || sender || message;
-  const ogImages = hasContent ? [ogUrl.toString()] : ["/tamegakitop.png"];
+  const ogImages = hasContent ? [ogUrl.toString()] : [`${baseUrl}/tamegakitop.png`];
 
   return {
     openGraph: {
