@@ -202,20 +202,43 @@ export function TamegakiPreview({ initialParams }: Props) {
     };
 
     const handleTwitterShare = async () => {
+        // Open window immediately to avoid popup blockers
+        const newWindow = window.open('', '_blank');
+
         const result = await uploadImage();
-        if (!result) return;
+        if (!result) {
+            newWindow?.close();
+            return;
+        }
 
         const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(result.imageUrl)}&og=${encodeURIComponent(result.ogUrl)}`;
         const text = `${name || '候補者'}殿への為書きを作成しました。 #為書きジェネレーター`;
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+
+        if (newWindow) {
+            newWindow.location.href = twitterUrl;
+        } else {
+            window.open(twitterUrl, '_blank');
+        }
     };
 
     const handleFacebookShare = async () => {
+        const newWindow = window.open('', '_blank');
+
         const result = await uploadImage();
-        if (!result) return;
+        if (!result) {
+            newWindow?.close();
+            return;
+        }
 
         const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(result.imageUrl)}&og=${encodeURIComponent(result.ogUrl)}`;
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+
+        if (newWindow) {
+            newWindow.location.href = facebookUrl;
+        } else {
+            window.open(facebookUrl, '_blank');
+        }
     };
 
     const handleShare = async () => {
