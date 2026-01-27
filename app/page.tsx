@@ -35,7 +35,11 @@ export async function generateMetadata(
 
   // Check if any main content is present
   const hasContent = name || sender || message;
-  const ogImages = hasContent ? [ogUrl.toString()] : [`${baseUrl}/tamegakitop.png`];
+
+  // Hardcode the production domain for the default image to ensure it works
+  const ogImages = hasContent
+    ? [ogUrl.toString()]
+    : ['https://tamegaki-app.vercel.app/tamegakitop.png'];
 
   return {
     openGraph: {
