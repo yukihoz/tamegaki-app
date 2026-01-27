@@ -204,6 +204,9 @@ export function TamegakiPreview({ initialParams }: Props) {
     const handleTwitterShare = async () => {
         // Open window immediately to avoid popup blockers
         const newWindow = window.open('', '_blank');
+        if (newWindow) {
+            newWindow.document.write('<html><body style="background:#f5f5f4; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif; color:#57534e;"><div>準備中...</div></body></html>');
+        }
 
         const result = await uploadImage();
         if (!result) {
@@ -224,6 +227,9 @@ export function TamegakiPreview({ initialParams }: Props) {
 
     const handleFacebookShare = async () => {
         const newWindow = window.open('', '_blank');
+        if (newWindow) {
+            newWindow.document.write('<html><body style="background:#f5f5f4; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif; color:#57534e;"><div>準備中...</div></body></html>');
+        }
 
         const result = await uploadImage();
         if (!result) {
