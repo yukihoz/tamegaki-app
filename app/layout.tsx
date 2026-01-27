@@ -48,11 +48,11 @@ export const metadata: Metadata = {
     description: "選挙や応援に使える為書きを簡単に作成・シェアできます。",
     type: "website",
     locale: "ja_JP",
-    images: ["/tamegaki-base.png"],
+    images: ["/tamegakitop.png"],
   },
   twitter: {
     card: "summary_large_image",
-    images: ["/tamegaki-base.png"],
+    images: ["/tamegakitop.png"],
   },
 };
 
