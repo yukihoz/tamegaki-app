@@ -201,50 +201,33 @@ export function TamegakiPreview({ initialParams }: Props) {
         }
     };
 
-    const handleTwitterShare = async () => {
-        // Open window immediately to avoid popup blockers
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-            newWindow.document.write('<html><body style="background:#f5f5f4; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif; color:#57534e;"><div>準備中...</div></body></html>');
-        }
+    const [shareModal, setShareModal] = useState<{ url: string; platform: 'twitter' | 'facebook' } | null>(null);
 
+    const handleTwitterShare = async () => {
         const result = await uploadImage();
-        if (!result) {
-            newWindow?.close();
-            return;
-        }
+        if (!result) return;
 
         const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(result.imageUrl)}&og=${encodeURIComponent(result.ogUrl)}`;
         const text = `${name || '候補者'}殿への為書きを作成しました。 #為書きジェネレーター`;
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
 
-        if (newWindow) {
-            newWindow.location.href = twitterUrl;
-        } else {
-            window.open(twitterUrl, '_blank');
-        }
+        setShareModal({ url: twitterUrl, platform: 'twitter' });
     };
 
     const handleFacebookShare = async () => {
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-            newWindow.document.write('<html><body style="background:#f5f5f4; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:sans-serif; color:#57534e;"><div>準備中...</div></body></html>');
-        }
-
         const result = await uploadImage();
-        if (!result) {
-            newWindow?.close();
-            return;
-        }
+        if (!result) return;
 
         const shareUrl = `${window.location.origin}/share?img=${encodeURIComponent(result.imageUrl)}&og=${encodeURIComponent(result.ogUrl)}`;
         const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
 
-        if (newWindow) {
-            newWindow.location.href = facebookUrl;
-        } else {
-            window.open(facebookUrl, '_blank');
-        }
+        setShareModal({ url: facebookUrl, platform: 'facebook' });
+    };
+
+    const executeShare = () => {
+        if (!shareModal) return;
+        window.open(shareModal.url, '_blank');
+        setShareModal(null);
     };
 
     const handleShare = async () => {
@@ -621,6 +604,37 @@ export function TamegakiPreview({ initialParams }: Props) {
                     </div>
                 </div>
             </div>
+            {/* Share Modal */}
+            {shareModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-2xl flex flex-col gap-4 animate-in fade-in zoom-in duration-200">
+                        <div className="text-center">
+                            <h3 className="text-lg font-bold mb-2">準備が完了しました</h3>
+                            <p className="text-gray-500 text-sm">
+                                以下のボタンを押して{shareModal.platform === 'twitter' ? 'X' : 'Facebook'}へ移動してください。
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={executeShare}
+                            className={clsx(
+                                "w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2 transition-transform active:scale-95",
+                                shareModal.platform === 'twitter' ? "bg-black hover:bg-gray-800" : "bg-[#1877F2] hover:bg-[#166fe5]"
+                            )}
+                        >
+                            {shareModal.platform === 'twitter' ? <Twitter className="w-5 h-5" /> : <Facebook className="w-5 h-5" />}
+                            {shareModal.platform === 'twitter' ? 'Xで投稿する' : 'Facebookでシェア'}
+                        </button>
+
+                        <button
+                            onClick={() => setShareModal(null)}
+                            className="w-full py-2 text-gray-400 hover:text-gray-600 text-sm font-medium"
+                        >
+                            キャンセル
+                        </button>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }
